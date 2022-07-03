@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+source "$BASE_DIR/framework.sh"
+
+# print the temperature of each cpu core in the form
+#
+#  temp1   temp2   temp3
+#
+# the background color is chosen by the core temperature
+#
+#  green:   < 60°C
+#  orange:  < 80°C  and  >= 60°C
+#  red:     >= 80°C
+
+# get the cpu core temeperatures with sensors and grep it
+# to a number per line per core
+core_temperatures=$( sensors | sed -En 's/^temp[0-9]+:\s+\+([0-9.].+$)+/\1/p' )
+
+# split the temperatures string at the newline
+readarray -t temperature_lines <<< "$core_temperatures"
+
+temperature_values=()
+for temperature_term in "${temperature_lines[@]}" ; do
+    # get the number from XX.X°X
+    temperature=$( echo -n "$temperature_term" | sed -re 's/([0-9]+)\..*/\1/g' )
+
+    # if the temperature is higher than 80 degree...
+    if [[ "$temperature" -ge 80 ]]; then
+        # ...print with red background
+        temperature_values+="${CE}$temperature_term${CN}"
+    # if the temperature is between 60 and 80 degrees...
+    elif [[ "$temperature" -ge 60 ]]; then
+        # print the background orange
+        temperature_values+="${CW}$temperature_term${CN}"
+    # if the temperature is lower tha 60 degress...
+    else
+        # ...make it green
+        temperature_values+="${CO}$temperature_term${CN}"
+    fi
+done
+
+text="$(print_wrap $WIDTH "${temperature_values[@]}")"
+
+print_columns "CPU Temperature" "$text"

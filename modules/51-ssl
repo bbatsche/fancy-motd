@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+source "$BASE_DIR/framework.sh"
+
+# get the current unix-timestamp to check later
+# if the certificates are valid or expired
+current_unixtime=$( date +"%s" )
+
+# Warn if the cert expires in a week or less
+let threshold=3600*24*7
+
+# iterate through all domains configured in
+# domains-array
+certs=()
+for domain in ${domains[@]}; do
+    # get the expiration date from the domain certificates
+    # with openssl
+    expire_date=$(
+        openssl s_client \
+            -connect "$domain:443" \
+            -servername "$domain" \
+            < /dev/null 2>/dev/null \
+            | openssl x509 -noout -enddate \
+            | grep -oP '(?<=notAfter=).*'
+    )
+
+    # convert the expiration date to a unix timestamp
+    expire_date_unixtime=$( date -d "$expire_date" +"%s" )
+
+    let remaining_time=$expire_date_unixtime-$current_unixtime
+    let days=$remaining_time/3600/24
+    remaining_days=$( printf "%.0f" $days)
+
+    # check if the certificate is expired
+    if [[ "${remaining_time}" -ge "${threshold}" ]]; then
+        certs+=("${CO}✔ ${remaining_days} days${CN}: ${domain}")
+    elif [[ "${remaining_time}" -ge "0" ]]; then
+        certs+=("${CW}‼︎ ${remaining_days} days${CN}: ${domain}")
+    else
+        certs+=("${CE}✖ expired${CN}: ${domain}")
+    fi
+done
+
+text="$(print_wrap $WIDTH "${certs[@]}")"
+
+print_columns "Certificates" "$text"

@@ -15,3 +15,8 @@ services["docker"]="Docker"
 services["sshd"]="SSH"
 services["fail2ban"]="Fail2Ban"
 services["ufw"]="UFW"
+
+domains=(
+    "facebook.com"
+    "google.com"
+)
