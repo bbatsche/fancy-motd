@@ -11,7 +11,7 @@ export CN="\e[0m"  # None
 export WIDTH=50
 
 # Services to show
-export declare -A services
+declare -xA services
 services["nginx"]="Nginx"
 services["docker"]="Docker"
 services["sshd"]="SSH"
