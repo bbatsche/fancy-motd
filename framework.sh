@@ -1,19 +1,13 @@
 # shellcheck shell=bash
 
+if [[ -z "${CONFIG_PATH}" || ! -f "${CONFIG_PATH}" ]]; then
+    echo "Config file is missing or not defined"
+    exit 1
+fi
+
 # Source the config
 # shellcheck source=config.sh.example
 source "${CONFIG_PATH}"
-
-# Provide default values for obligatory settings
-# Colors
-CA="${CA:-\e[34m}" # Accent
-CO="${CO:-\e[32m}" # Ok
-CW="${CW:-\e[33m}" # Warning
-CE="${CE:-\e[31m}" # Error
-CN="${CN:-\e[0m}"  # None
-
-# Max width used for components in second column
-WIDTH="${WIDTH:-50}"
 
 # Prints given blocks of text side by side
 # $1 - left column

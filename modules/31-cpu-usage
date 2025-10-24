@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+# shellcheck source=./framework.sh
+source "${BASE_DIR}/framework.sh"
+
+# Print CPU usage broken out for user, system, & IO wait, plus idle (should add up to roughly 100%)
+#
+# Thresholds for the usage percentage:
+#  Green: < 30%
+# Oragne: > 30% && < 60%
+#    Red: > 60%
+#
+# Idle Thresholds:
+#  Green: > 60%
+# Orange: > 30% && < 60%
+#    Red: < 30%
+
+declare -A labels
+declare -A values
+labels["usr"]="User"
+labels["sys"]="System"
+labels["iowait"]="IO Wait"
+labels["idle"]="Idle"
+
+usage=$(mpstat | grep -Ev '^Linux|^$' | awk 'NR==1{ for (i=1; i<=NF; i++) {f[$i] = i} }{ printf "%s %s %s %s\n", $(f["%usr"]), $(f["%sys"]), $(f["%iowait"]), $(f["%idle"]) }' | tail -n1)
+
+IFS=" " read -r values["usr"] values["sys"] values["iowait"] values["idle"] <<< "${usage}"
+
+text=""
+for key in "${!labels[@]}"; do
+    if [[ "${key}" == "idle" ]]; then
+        continue
+    fi
+
+    percent=$(echo -n "${values[${key}]}" | sed -re 's/([0-9]+)\.[0-9]+/\1/g')
+
+    text+="${labels[${key}]}: "
+    if [[ "${percent}" -le 30 ]]; then
+        text+="${CO}${values[${key}]}%${CN} "
+    elif [[ "${percent}" -le 60 ]]; then
+        text+="${CW}${values[${key}]}%${CN} "
+    else
+        text+="${CE}${values[${key}]}%${CN} "
+    fi
+done
+
+percent=$(echo -n "${values[idle]}" | sed -re 's/([0-9]+)\.[0-9]+/\1/g')
+
+text+="${labels[idle]}: "
+if [[ "${percent}" -ge 60 ]]; then
+    text+="${CO}${values[idle]}%${CN}"
+elif [[ "${percent}" -ge 30 ]]; then
+    text+="${CW}${values[idle]}%${CN}"
+else
+    text+="${CE}${values[idle]}%${CN}"
+fi
+
+print_columns "CPU Usage" "${text}"
