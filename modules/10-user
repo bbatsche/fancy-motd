@@ -23,7 +23,7 @@ done < <(who)
 
 print_columns "Logged as" "${user}@${hostname}"
 if [[ ${#users[@]} -gt 0 ]]; then
-    print_columns "Users (${usercount})" "$(print_wrap $WIDTH "${users[@]}")"
+    print_columns "Users (${usercount})" "$(print_wrap ${WIDTH} "${users[@]}")"
 else
     print_columns "Users (${usercount})" ""
 fi
