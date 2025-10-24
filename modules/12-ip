@@ -4,10 +4,10 @@ set -euo pipefail
 # shellcheck source=./framework.sh
 source "${BASE_DIR}/framework.sh"
 
-ips_v4=$(ip a | awk '/inet / && /global/ {split($2, arr, /\//); print arr[1]}')
+ips_v4=$(ip -4 a show eth0 | awk '/inet / && /global/ {split($2, arr, /\//); print arr[1]}')
 IFS=$'\n' read -r -a ip4s <<< "${ips_v4}"
 
-ips_v6=$(ip a | awk '/inet6 / && /global/ {split($2, arr, /\//); print arr[1]}')
+ips_v6=$(ip -6 a show eth0 permanent | awk '/inet6 / {split($2, arr, /\//); print arr[1]}')
 IFS=$'\n' read -r -a ip6s <<< "${ips_v6}"
 
 text4=$(print_wrap "${WIDTH}" "${ip4s[@]}")
